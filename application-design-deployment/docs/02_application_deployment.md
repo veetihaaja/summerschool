@@ -19,14 +19,14 @@ lang:   en
 
 <div class=column>
 - Now let's do some science with it! 
-- How do we run the code on large machines?
+- How to run the code on large machines?
 </div>
 
 
 # Accessing top-tier computing resources
-- Typically access for even Tier-0 supercomputers is free for academic users
-- No free lunch though – it is a competitive process!
-- Various national and international organisations
+- Access even to Tier-0 supercomputers is usually **free for academic users**
+- No free lunch though – it is a **competitive** process!
+- Various national and international organisations, in particular
 
 <div class=column style=width:35%>
 ![](images/CSC_2012_LOGO.png)
@@ -37,20 +37,49 @@ lang:   en
 </div>
 
 
-# Application contents
-- Be ready to explain and defend your solid science (or business) case
-- Have a clear picture of data amounts and flow – Data Management Plan
-- Demonstrate technical expertise with and good performance of the code
+# HPC organisations
+<div class=column style=width:49%>
+- CSC – IT Center for Science Ltd.
+   - Est. 1971, Espoo & Kajaani
+   - Non-profit state enterprise (70% state, 30% HEI)
+   - Free-of-charge for Finnish academic users
+
+![](images/LUMI.jpg)
+</div>
+
+<div class=column style=width:49%>
+- The European High Performance Computing Joint Undertaking
+   - 38 participating states
+   - 19 AI factories
+   - 14 supercomputers
+   - 10 quantum computers
+
+<img src="images/EuroHPC_Members_Map.png" align="right" />
+</div>
 
 
 # Application types
-- CSC academic projects
-- EuroHPC
-   - Development
-   - Benchmark
-   - Regular
-   - Extreme
-- Pilot
+- CSC academic projects – Finnish HEIs and state research institutes
+   - National infrastructure (Roihu, Pouta, Allas, ...)
+   - LUMI through Finnish allocation
+- EuroHPC – students, researchers, businesses from eligible countries
+   - Any EuroHPC system (LUMI, MareNostrum5, Jupiter, ...) 
+   - **Development** – get your code up to speed
+   - **Benchmark** – prove it runs well at scale
+   - **Regular** – large-scale campaign
+   - **Extreme** – hero runs
+- Pilot – new machines, for the brave
+
+
+# Application contents
+- Solid science (or business) case – **explained clearly**
+   - Technical reviewers will likely only be from the broad field (physics, biology, ...)
+   - Scientific reviewers will not be as close to your topic as in a journal review
+- Demonstrate **technical expertise**
+   - Know how to run the code!
+- Demonstrate **good performance** of the code
+   - More on this in a moment
+- Have a clear picture of data amounts and flow – **Data Management Plan**
 
 
 # Procedure

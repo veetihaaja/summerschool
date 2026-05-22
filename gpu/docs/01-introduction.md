@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: CC-BY-4.0
 
 title:  Introduction to GPU programming
-event:  Tools for High Performance Computing, University of Helsinki, 2026
+event:  CSC Summer School in High-Performance Computing 2026
 lang:   en
 ---
 
@@ -16,9 +16,9 @@ We will cover the following topics
 
 - What is a GPU and why should you care
 - How does the architecture of a GPU differ from that of a CPU
+- What are some of the implications of GPU hardware
 - How to use GPUs
 - What problems are a good fit for GPUs
-- (Bonus: Software - hardware mapping on GPUs)
 
 # Learning objectives
 
@@ -26,13 +26,13 @@ After this lecture you will understand
   \
   \
 
-- why GPUs are relevant for HPC
-- how GPUs differ from CPUs
-- how GPUs can be utilized
-- what problems map well to GPUs
-- (if time permits, how the software maps to hardware on a high level)
+- Why GPUs are relevant for HPC
+- How GPUs differ from CPUs
+- How programming GPUs differs from programming CPUs
+- How GPUs can be utilized
+- What problems map well to GPUs
 
-# GPUs: why and what? {.section}
+# GPUs: why? {.section}
 
 # Why use GPUs for HPC?
 
@@ -139,6 +139,114 @@ November 2025
 GPUs enable exascale ($10^{18}$ FLOPS)
 </div>
 
+# Runtimes of Taylor expansion, N = 0
+
+::::::::: {.columns}
+:::::: {.column width="40%"}
+
+- $y_i \gets \sum_{n = 0}^{0} \frac{x_i^n}{n!}$
+- $i = 1\dots$ vector size
+- No arithmetic: $y_i \gets 1$
+- Serial, OpenMP with 64 threads and GPU
+
+::::::
+:::::: {.column width="80%"}
+![](img/runtimes_0.png){.center width=200%}
+::::::
+:::::::::
+
+# Runtimes of Taylor expansion, N = 8
+
+::::::::: {.columns}
+:::::: {.column width="40%"}
+
+- $y_i \gets \sum_{n = 0}^{8} \frac{x_i^n}{n!}$
+- $i = 1\dots$ vector size
+- Serial, OpenMP with 64 threads and GPU
+
+::::::
+:::::: {.column width="80%"}
+![](img/runtimes_8.png){.center width=120%}
+::::::
+:::::::::
+
+# Runtimes of Taylor expansion, N = 16
+
+::::::::: {.columns}
+:::::: {.column width="40%"}
+
+- $y_i \gets \sum_{n = 0}^{16} \frac{x_i^n}{n!}$
+- $i = 1\dots$ vector size
+- Serial, OpenMP with 64 threads and GPU
+
+::::::
+:::::: {.column width="80%"}
+![](img/runtimes_16.png){.center width=120%}
+::::::
+:::::::::
+
+# Runtimes of Taylor expansion, serial
+
+::::::::: {.columns}
+:::::: {.column width="40%"}
+
+- $y_i \gets \sum_{n = 0}^{N} \frac{x_i^n}{n!}$
+- $i = 1\dots$ vector size
+- Serial
+
+::::::
+:::::: {.column width="80%"}
+![](img/runtimes_serial.png){.center width=120%}
+::::::
+:::::::::
+
+# Runtimes of Taylor expansion, OpenMP 64 threads
+
+::::::::: {.columns}
+:::::: {.column width="40%"}
+
+- $y_i \gets \sum_{n = 0}^{N} \frac{x_i^n}{n!}$
+- $i = 1\dots$ vector size
+- OpenMP 64 threads
+
+::::::
+:::::: {.column width="80%"}
+![](img/runtimes_omp.png){.center width=120%}
+::::::
+:::::::::
+
+# Runtimes of Taylor expansion, GPU
+
+::::::::: {.columns}
+:::::: {.column width="40%"}
+
+- $y_i \gets \sum_{n = 0}^{N} \frac{x_i^n}{n!}$
+- $i = 1\dots$ vector size
+- GPU
+
+::::::
+:::::: {.column width="80%"}
+![](img/runtimes_hip.png){.center width=120%}
+::::::
+:::::::::
+
+# Runtimes of Taylor expansion, all
+
+::::::::: {.columns}
+:::::: {.column width="40%"}
+
+- $y_i \gets \sum_{n = 0}^{N} \frac{x_i^n}{n!}$
+- $i = 1\dots$ vector size
+- All
+
+::::::
+:::::: {.column width="80%"}
+![](img/runtimes_all.png){.center width=120%}
+::::::
+:::::::::
+
+# CPU vs GPU: what's the difference? {.section}
+
 # What is a GPU?
 
 :::::: {.columns}
@@ -192,8 +300,6 @@ CPU and GPU on a single chip
 
 ![](img/async-cpu-gpu.png){.center width=100%}
 
-# GPU architecture {.section}
-
 # CPU architecture
 
 :::::: {.columns}
@@ -235,118 +341,75 @@ Die shot of MI250X (on the web page)
 
 https://www.amd.com/en/technologies/cdna.html#cdna2
 
+# CPU vs GPU threads
 
-# GPU vs CPU FLOPS (32 bit float)
+GPU code is usually written from the perspective of a single GPU thread
 
-| Processor | FLOP | Cores | SIMDs | Lanes | Frequency (GHz) | Peak Performance |
-|---|---|---|---|---|---|---|
-| EPYC 7763 | 2 | 64 | 2 | 8 | 2.25 | 4.6 TFLOPS |
-| EPYC 9965 | 2 | 192 | 2 | 16 | 2.25 | 27.6 TFLOPS |
-| MI250x | 2 | 220 | 4 | 16 | 1.7 | 47.9 TFLOPS |
-| H100 | 2 | 132 | 4 | 32 | 1.785 | 60.3 TFLOPS |
+Notice the lack of any for loops
 
-# GPU vs CPU FLOPS (64 bit float)
+```c++
+__global__ void saxpy(int n, float alpha, float *x, float *y) {
+    // What is my global thread ID?
+    const int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
-| Processor | FLOP | Cores | SIMDs | Lanes | Frequency (GHz) | Peak Performance |
-|---|---|---|---|---|---|---|
-| EPYC 7763 | 2 | 64 | 2 | 4 | 2.25 | 2.3 TFLOPS |
-| EPYC 9965 | 2 | 192 | 2 | 8 | 2.25 | 13.8 TFLOPS |
-| MI250x | 2 | 220 | 4 | 16 | 1.7 | 47.9 TFLOPS |
-| H100 | 2 | 132 | 4 | 16 | 1.785 | 30.2 TFLOPS |
-
-# SIMD
-
-- SIMD = Single Instruction, Multiple Data
-- One operation applied to multiple data elements simultaneously
-- All lanes in a SIMD unit execute the same instruction on different data
-- Example: Add 8 numbers in parallel using 8 lanes
-- Fundamental for high performance computation
-  - If your code diverges (different if-else branches), performance degrades
-  - Uniform execution across lanes = maximum throughput
-
-# SIMD
-
-:::::: {.columns}
-::: {.column width="40%"}
-
-No divergence (illustrative example)
-  \
-  \
-```cpp
-for (auto i = 0; i < N; i++) {
-    c[i] = a[i] + b[i];
+    // Is my thread ID smaller than the length of the array?
+    if (tid < n) {
+        // Perform the operation, for this single ID
+        y[tid] = alpha * x[tid] + y[tid];
+    }
 }
 ```
-Throughput: 8
+
+# CPU vs GPU threads -- Very different beasts
+
+:::::: {.columns}
+::: {.column width="50%"}
+GPU threads
+
+- Very lightweight: cheap to switch
+- $N_{thr} = O(N_{data}) \approx 10^4 - 10^6$
+- Spawned automatically during kernel launch
+- Threads grouped hiearchically
+- Mapped to lanes of a SIMD unit
 
 :::
-::: {.column width="60%"}
+::: {.column width="50%"}
+CPU threads
 
-One cycle
-
-![](img/simd8wide.png){.center width=100%}
+- Context switch a heavy operation
+- $N_{thr} = O(N_{core}) \approx 10^1 - 10^2$
+- Spawned by the user/library
+- Threads can work independently
+- Mapped to cores
 :::
 ::::::
 
-# SIMD
+# CPU vs GPU threads -- Keeping HW busy
 
 :::::: {.columns}
-::: {.column width="40%"}
+::: {.column width="50%"}
+GPU
 
-Divergence (illustrative example)
-  \
-  \
-```cpp
-for (auto i = 0; i < N; i++) {
-    if ((i % 8) < 4)
-        c[i] = a[i] + b[i];
-    else
-        c[i] = a[i] * b[i];
-}
-```
-
-Throughput: 4
+- Launch many threads to oversubscribe hardware
+- In case of a stall, context switch to another thread to keep working
 
 :::
-::: {.column width="60%"}
+::: {.column width="50%"}
+CPU
 
-First cycle
+- Launch few threads: 1-2 per core
+- Attempt to reduce the number of stalls by any means necessary
+  - branch prediction
+  - instruction reordering
+  - large and sophisticated caches
+- As the last resort, context switch to another thread
 
-![](img/simd8wide-divergence1.png){.center width=100%}
-:::
-::::::
-
-# SIMD
-
-:::::: {.columns}
-::: {.column width="40%"}
-
-Divergence (illustrative example)
-  \
-  \
-```cpp
-for (auto i = 0; i < N; i++) {
-    if ((i % 8) < 4)
-        c[i] = a[i] + b[i];
-    else
-        c[i] = a[i] * b[i];
-}
-```
-
-Throughput: 4
-
-:::
-::: {.column width="60%"}
-
-Second cycle
-
-![](img/simd8wide-divergence2.png){.center width=100%}
 :::
 ::::::
 
 # GPU Architecture Implications: Memory Bandwidth
 
-More SIMDs = higher bandwidth requirement
+More computing units = higher bandwidth requirement
 
 :::::: {.columns}
 ::: {.column width="40%"}
@@ -364,7 +427,6 @@ More SIMDs = higher bandwidth requirement
 
 - Many parallel execution units require many parallel tasks
 - A serial algorithm only uses a fraction of GPU capacity
-- High performance requires scaling to hundreds of SIMD units
 - Not all problems parallelize easily
 
 # GPU Architecture Implications: High latency, high throughput
@@ -402,7 +464,7 @@ Image credit J. Lankinen
 
 # GPU Architecture Implications: Algorithmic Changes
 
-- Reduction step across a SIMD 16 lanes wide
+- Reduction step across a SIMD unit
 - Illustrative only, shows how different this is from a serial reduction
 
 :::::: {.columns}
@@ -425,6 +487,8 @@ for (auto i = 4; i > 0; i--) {
 ::::::
 
 # How to Use a GPU {.section}
+
+TODO: typistetään tämä hyvin yksinkertaiseksi, ks. Jussin kommentit
 
 # How to Use a GPU: Overview
 
@@ -894,209 +958,6 @@ Ask yourself
 - Many problems map well to the parallel nature of GPUs, but not all
 
 # Questions?
-
-# Bonus: Software -- Hardware mapping {.section}
-
-# Refresh: GPU architecture
-
-:::::: {.columns}
-::: {.column width="70%"}
-![](img/mi250x-layout.png){.center width=100%}
-:::
-::: {.column width="30%"}
-Or more abstractly
-
-![](img/gcd-ce-cu-abstract.png){.center width=100%}
-:::
-::::::
-
-# GPU threads
-
-GPU code is usually written from the perspective of a single GPU thread
-
-Notice the lack of any for loops
-
-```c++
-__global__ void saxpy(int n, float alpha, float *x, float *y) {
-    // What is my global thread ID?
-    const int tid = blockIdx.x * blockDim.x + threadIdx.x;
-
-    // Is my thread ID smaller than the length of the array?
-    if (tid < n) {
-        // Perform the operation, for this single ID
-        y[tid] = alpha * x[tid] + y[tid];
-    }
-}
-```
-
-# GPU threads
-
-GPU threads are very different from CPU threads
-  \
-  \
-
-- very lightweight
-- spawned automatically
-- grouped hiearchically
-- mapped to hardware differently
-
-# Grid, block, wavefront, thread hierarchy
-
-![](img/grid-block-wavefront-thread-tree.png){.center width=70%}
-
-# GPU thread -- SIMD lane
-
-A single GPU thread maps to a single lane on a SIMD unit
-
-\  
-\  
-
-![](img/thread_lane.png){.center width=50%}
-
-# Wavefront/warp -- SIMD unit
-
-:::::: {.columns}
-::: {.column width="50%"}
-Consecutive GPU threads grouped by hardware:
-
-|#|Name|Vendor|HW|
-|-|----|------|--|
-|64|wavefront|AMD|SIMD|
-|32|warp|NVIDA|SMSP|
-:::
-::: {.column width="50%"}
-![](img/wavefront-simd.png){.center width=100%}
-:::
-::::::
-
-SMSP: Streaming Multiprocessor Sub-Partition (~= SIMD)
-
-Wavefronts/warps recide on the same SIMD/SMSP until completion
-
-# Wavefront
-
-1. Wavefronts map to a SIMD unit
-2. SIMD units perform the same operation for all lanes
-3. Sub-wavefront divergence reduces throughput
-
-:::::: {.columns}
-::: {.column width="50%"}
-```cpp
-// avoid
-if ((tid % 64) < 32)
-    divergence_within_a_wavefront();
-else
-    reduces_throughput();
-```
-:::
-::: {.column width="50%"}
-```cpp
-// ok
-if ((tid / 64) < N)
-    no_divergence_since();
-else
-    threads_in_wavefront_take_same_branch();
-```
-:::
-::::::
-
-# Block of threads -- CU/SM
-
-:::::: {.columns}
-::: {.column width="60%"}
-GPU threads grouped also in software by the user
-
-**Block of threads** = N threads, where (1 <= N <= 1024)
-
-Block maps to CU/SM (AMD/NVIDIA)
-
-Blocks may be 1, 2 or 3 dimensional
-
-CU: Compute Unit
-
-SM: Streaming Multiprocessor
-
-:::
-::: {.column width="40%"}
-![](img/block-cu.png){.center width=60%}
-:::
-::::::
-
-# Block of threads -- CU/SM
-
-:::::: {.columns}
-::: {.column width="50%"}
-Multiple blocks may map to a single CU/SM
-  \
-  \
-  \
-  \
-  \
-  \
-A single block is never mapped to multiple CU/SMs
-:::
-::: {.column width="50%"}
-![](img/multi-block-per-cu.png){.center width=100%}
-:::
-::::::
-
-# Block of threads and shared memory
-
-1. Block of threads maps to a CU/SM
-2. The SIMDs/SMSPs on CU/SM share a small amount of fast memory
-3. Threads within the same block may cooperate through that memory
-
-![](img/mi250x-cu-lds-highlight.png){.center width=100%}
-
-# Grid of blocks -- GPU
-
-:::::: {.columns}
-::: {.column width="50%"}
-User also defines the number of blocks
-
-**Grid of blocks** = N blocks, where (1 <= N <= M) and M depends on e.g. hardware, but is >= 65535
-
-A grid maps to a single GPU
-
-Grids may be 1, 2 or 3 dimensional
-
-:::
-::: {.column width="50%"}
-![](img/grid-gcd.png){.center width=50%}
-:::
-::::::
-
-# Mapping summary
-
-|#|Name|HW|User|Dim|Notes|
-|-|----|--|----|---|-----|
-|1|thread|lane|no|1||
-|64|wavefront|SIMD|no|1|AMD (cf. warp)|
-|32|warp|SMSP|no|1|NVIDIA (cf. wavefront)|
-|N|block of threads|CU/SM|yes|1-3|1 <= N <= 1024|
-|N|grid of blocks|GPU|yes|1-3|1 <= N <= M, M varies|
-
-# Defining grids and blocks, launching work
-
-```c++
-__global__ void saxpy(int n, float alpha, float *x, float *y) {
-    //              [0, 4095]    1024         [0, 1023]
-    const int tid = blockIdx.x * blockDim.x + threadIdx.x;
-    // We use the block ID--/            /         \-- the local thread ID
-    //              and the block size--/
-    // To compute the global thread ID
-    if (tid < n) {
-        y[tid] = alpha * x[tid] + y[tid];
-    }
-}
-
-int main(int argc, char **argv) {
-    // Allocation, initialization etc. not shown
-    const dim3 block_of_threads(1024, 1, 1); // 32 warps, 16 wavefronts
-    const dim3 grid_of_blocks(4096, 1, 1);
-    saxpy<<<grid_of_blocks, block_of_threads>>>(n, alpha, x, y);
-}
-```
 
 # The End
 

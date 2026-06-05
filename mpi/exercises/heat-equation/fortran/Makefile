@@ -79,7 +79,6 @@ endif
 
 EXE = heat_mpi
 EXE_FULL = $(BUILDDIR)/$(EXE)
-DEPS = $(OBJS:.o=.d)
 
 all: $(EXE)
 
@@ -93,13 +92,8 @@ $(EXE): $(EXE_FULL)
 $(EXE_FULL): $(OBJS) $(HEAT_COMMON_LIB)
 	$(FC) $(FCFLAGS) $(LDFLAGS) $(OBJS) $(HEAT_COMMON_LIB) -o $@ $(LIBS)
 
-# The -MMD -MP flags instruct the compiler to generate file dependency graphs,
-# so that on consecutive builds we only need to rebuild objects that actually changed.
-
 $(BUILDDIR)/%.o: $(SRCDIR)/%.F90 | $(BUILDDIR)
-	$(FC) $(FCFLAGS) $(FCMODFLAGS) -MMD -MP -c $< -o $@
-
--include $(DEPS)
+	$(FC) $(FCFLAGS) $(FCMODFLAGS) -c $< -o $@
 
 .PHONY: clean
 clean: heat-common-clean

@@ -246,6 +246,20 @@ In this shell, `srun` will launch jobs within the allocation:
 srun --ntasks-per-node=2 --cpus-per-task=2 ./prog.x
 ```
 
+
+### Interactive shell on a compute node
+
+Create an interactive shell on a compute node:
+
+```bash
+srun --job-name=cn-shell --account=project_462001452 --partition=small --nodes=1 --ntasks-per-node=1 --cpus-per-task=2 --time=01:00:00 --pty ./tools/launch-cn-shell.sh
+```
+
+The script [launch-cn-shell.sh](tools/launch-cn-shell.sh) launches a bash shell
+with the environment cleaned so that submitting slurm jobs works from the shell
+in the same way as from the login node.
+
+
 ## Resources
 
 - [LUMI documentation](https://docs.lumi-supercomputer.eu/)

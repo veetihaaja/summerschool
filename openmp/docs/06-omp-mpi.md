@@ -18,7 +18,7 @@ lang:   en
 
 # Parallel programming models
 
- ![](img/processes-threads.png){.center width=80%}
+ ![](img/processes-threads.svg){.center width=80%}
 <br>
 <div class=column>
 **MPI: Processes**
@@ -46,7 +46,7 @@ lang:   en
 </div>
 
 <div class="column">
-![](img/supercomputer-node-hybrid.png){.center width=80%}
+![](img/supercomputer-node-hybrid.svg){.center width=80%}
 </div>
 
 # Potential advantages of the hybrid approach

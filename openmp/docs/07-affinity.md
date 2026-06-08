@@ -26,7 +26,7 @@ lang:   en
 </div>
 
 <div class=column>
-![](img/numa-schematic.png){.center width=70%}
+![](img/numa-schematic.svg){.center width=70%}
 </div>
 
 # First touch policy

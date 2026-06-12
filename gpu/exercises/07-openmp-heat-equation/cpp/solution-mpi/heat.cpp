@@ -1,5 +1,6 @@
 #include "heat.hpp"
 #include <iostream>
+#include <stdio.h>
 #include <mpi.h>
 #include <omp.h>
 

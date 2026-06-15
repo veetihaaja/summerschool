@@ -224,7 +224,7 @@ MPI_Recv(recvbuf, bufsize, MPI_INT,
          &status);
 ```
 </div>
-- **Note!** Clear code makes it clear that this code will deadlock!
+- **Note!** Clear code makes it clear that this code may deadlock!
 
 
 # Combined send & receive
@@ -251,7 +251,7 @@ MPI_Sendrecv(message, msgsize, MPI_INT,
              &status);
 ```
 
-- **Note!** No deadlock here!
+- **Note!** No risk of deadlock here!
 
 
 # Coping with boundaries

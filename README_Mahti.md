@@ -168,6 +168,13 @@ nvc++ -mp=gpu -O3 -gpu=cc80 test.cpp -o test.x
 nvfortran -mp=gpu -O3 -gpu=cc80 test.F90 -o test.x
 ```
 
+To obtain compiler diagnostics:
+```bash
+nvc -mp=gpu -O3 -gpu=cc80 -Minfo=mp test.c -o test.x
+nvc++ -mp=gpu -O3 -gpu=cc80 -Minfo=mp test.cpp -o test.x
+nvfortran -mp=gpu -O3 -gpu=cc80 -Minfo=mp test.F90 -o test.x
+```
+
 Compilation of MPI + OpenMP offload programs works with the usual wrappers in this environment:
 ```bash
 mpicc -mp=gpu -O3 -gpu=cc80 test.c -o test.x

@@ -283,7 +283,7 @@ Moving particles
 </div>
 <div class=column>
 
- ![](img/scaling.svg){.center width=80%}
+ ![](img/scaling.svg){.center width=100%}
 
 </div>
 

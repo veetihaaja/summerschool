@@ -24,7 +24,7 @@ On **Lumi**, one can compile the MPI example simply using the Cray compiler with
 CC -xhip ping-pong.cpp
 ```
 
-On LUMI, enable gpu-aware MPI on runtime (and compiling) by eexecuting:
+On LUMI, enable gpu-aware MPI on runtime by executing:
 ```
 MPICH_GPU_SUPPORT_ENABLED=1
 ```

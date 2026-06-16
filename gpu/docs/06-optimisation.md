@@ -131,14 +131,14 @@ ROCPROFV3 SUMMARY:
 
 | Link | Host-device | Device memory | 
 |------|------------:|--------------:|
-| LUMI-G MI250x | 36 GB/s | 1600 GB/s|
-| PCIE4.0 x16 | $\sim$ 32 GB/s |  |
+| LUMI-G MI250x | 36+36 GB/s | 1600 GB/s|
+| PCIE4.0 x16 | $\sim$ 32+32 GB/s |  |
 | A100 (Mahti) |  | 2000 GB/s |
-| GH200(Roihu) | 450GB/s | 4 TB/s |
+| GH200(Roihu) | 450+450GB/s | 4 TB/s |
 
 - Matrix multiplication $C = A \times B$ with 10000 x 10000 matrices in LUMI:
-    - Host-to-device memory copies: 0.07 s
-    - Computation: 0.04 s
+    - Host-to-device memory copies: 0.34 s
+    - Computation: 0.05 s
 
 ::: notes
 
@@ -515,10 +515,11 @@ Both reads and writes are coalesced
 
 # Other examples where shared memory is important
 
-- Matrix-matrix/vector multiplication
+- Matrix-matrix multiplication
  
   :::{.fragment}
   - Same elements are loaded in different threads
+  - Uncoalesced to coalesced
   :::
 - N-body problem
  

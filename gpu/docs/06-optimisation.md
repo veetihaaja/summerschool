@@ -30,7 +30,6 @@ After this lecture you will:
 - Know some optimization techniques for:
   - Memory
   - Kernels
-# Overview
 
 
 # Measuring performance

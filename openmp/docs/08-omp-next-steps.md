@@ -26,7 +26,7 @@ lang:   en
   - Potential for better cache re-usage
 - Parallelise outermost loops if possible
   - Move `parallel for / do` construct outside of inner loops
-  - `collapse` may provde additional parallelism
+  - `collapse` may provide additional parallelism
 - If using tasks: ensure all threads have a task to work on
 
 # Recap / quiz

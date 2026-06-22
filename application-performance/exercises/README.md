@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2026 CSC - IT Center for Science Ltd. <www.csc.fi>
+
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
 # Application performance exercises and demos
 
 This directory collects more or less guided examples of using selected profiling tools. Some of these will be presented

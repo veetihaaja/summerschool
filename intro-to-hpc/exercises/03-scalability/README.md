@@ -43,7 +43,7 @@ E_n = \frac{T_1}{n T_n}
 - For electricity cost, one can be estimate that a single CPU node consumes 600 W.
     - Note that this is only the power used by the CPUs, and does not include cooling, interconnect network etc.
 
-- For monetary cost, use CSC commercial pricing where a single node for one hour (1 Node-h) costs 6 €.
+- For monetary cost, use typically commercial HPC cloud pricing of 4 € / node hour for LUMI type CPUs
 
 As a rule of thumb, parallel efficiencies higher than 75% are usually considered reasonable.
 This corresponds to a speedup of 1.5 when doubling the number nodes or to a speedup of 3 when quadrupling and so on.

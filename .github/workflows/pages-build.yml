@@ -33,11 +33,17 @@ jobs:
           GIT_SHORT_SHA=$(git rev-parse --short $GITHUB_SHA)
           GIT_DATE=$(git show -s --format=%ci $GITHUB_SHA)
 
+          # Update theme
+          # TODO: PR to slidefactory
+          wget https://github.com/csc-training/slidefactory/archive/refs/heads/update-theme.zip
+          unzip update-theme.zip
+
           ARGS=""
           [[ "$INCLUDE_PDF" == "true" ]] && ARGS="--with-pdf"
 
           slidefactory pages about.yml build \
               --filters tools/mpi_links.py \
+              --theme slidefactory-update-theme/theme/csc-plain \
               --pandoc-args='--strip-comments' \
               --info_content "Updated for [$GIT_SHORT_SHA]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA) ($GIT_DATE)" \
               $ARGS

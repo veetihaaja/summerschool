@@ -51,8 +51,13 @@ int main(int argc, char **argv)
 
     // Time evolve
     for (int iter = 1; iter <= nsteps; iter++) {
-        exchange(previous, parallelization);
-        evolve(current, previous, a, dt);
+        std::vector<MPI_Request> requests = exchange(previous, parallelization);
+        evolve(current, previous, a, dt, false); // no edges
+
+        MPI_Waitall(requests.size(), requests.data(), MPI_STATUS_IGNORE);
+        
+        evolve(current, previous, a, dt, true); // edges
+
         if (iter % image_interval == 0) {
             write_field(current, iter, parallelization);
         }

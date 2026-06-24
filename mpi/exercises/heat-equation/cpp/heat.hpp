@@ -72,9 +72,9 @@ struct Field {
 void initialize(int argc, char *argv[], Field& current,
                 Field& previous, int& nsteps, ParallelData parallel);
 
-void exchange(Field& field, const ParallelData parallel);
+std::vector<MPI_Request> exchange(Field& field, const ParallelData parallel);
 
-void evolve(Field& curr, const Field& prev, const double a, const double dt);
+void evolve(Field& curr, const Field& prev, const double a, const double dt, bool edges);
 
 void write_field(const Field& field, const int iter, const ParallelData parallel);
 

@@ -19,12 +19,35 @@ void exchange(Field& field, const ParallelData parallel)
     // You can utilize the data() method of the Matrix class to obtain pointer
     // to element, e.g. field.temperature.data(i, j)
 
-    // Send to up, receive from down
+    // // Send to up, receive from down
+    // sbuf = field.temperature.data(1, 0);
+    // rbuf = field.temperature.data(field.nx+1, 0);
 
-    // Send to down, receive from up
+    // MPI_Send(sbuf, field.ny+2, MPI_DOUBLE, parallel.nup, 0, MPI_COMM_WORLD);
+    // MPI_Recv(rbuf, field.ny+2, MPI_DOUBLE, parallel.ndown, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    
+    // // Send to down, receive from up
+    // rbuf = field.temperature.data(0, 0);
+    // sbuf = field.temperature.data(field.nx, 0);
 
+    // MPI_Send(sbuf, field.ny+2, MPI_DOUBLE, parallel.ndown, 0, MPI_COMM_WORLD);
+    // MPI_Recv(rbuf, field.ny+2, MPI_DOUBLE, parallel.nup, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    // // TODO end
 
-    // TODO end
+    sbuf = field.temperature.data(1, 0);
+    rbuf = field.temperature.data(field.nx+1, 0);
+
+    MPI_Sendrecv(sbuf, field.ny+2, MPI_DOUBLE, parallel.nup, 0, 
+                 rbuf, field.ny+2, MPI_DOUBLE, parallel.ndown, 0,
+                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    rbuf = field.temperature.data(0, 0);
+    sbuf = field.temperature.data(field.nx, 0);
+
+    MPI_Sendrecv(sbuf, field.ny+2, MPI_DOUBLE, parallel.ndown, 0, 
+                 rbuf, field.ny+2, MPI_DOUBLE, parallel.nup, 0,
+                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
 }
 
 // Update the temperature values using five-point stencil */

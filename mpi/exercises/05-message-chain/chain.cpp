@@ -29,25 +29,44 @@ int main(int argc, char *argv[]) {
     // TODO: Set source and destination ranks to form a message chain:
     //      rank1 -> rank2 -> rank3 -> ...
     // Treat boundaries with MPI_PROC_NULL.
-    int source = -1;
-    int destination = -1;
+    
+    int source, destination;
+    if (rank == ntasks-1) {
+        source = rank-1;
+        destination = MPI_PROC_NULL;
+    } else if (rank == 0) {
+        source = MPI_PROC_NULL; 
+        destination = 1;
+    } else {
+        source = rank-1;
+        destination = rank+1;
+    }
 
     // Start measuring the time spent in communication
     MPI_Barrier(MPI_COMM_WORLD);
     double t0 = MPI_Wtime();
 
-    // TODO: Send messages
+    // // TODO: Send messages
+    // for (int i=0; i<ntasks-1; i++) {
+    //     MPI_Send(message.data(), numElements, MPI_INT, destination, rank+1, MPI_COMM_WORLD);
+    // }
 
+    
 
     printf("Sender: %d. Sent elements: %d. Tag: %d. Receiver: %d\n",
            rank, numElements, rank + 1, destination
     );
 
-    // TODO: Receive messages
+    MPI_Sendrecv(message.data(), numElements, MPI_INT, destination, rank+1,
+                 receiveBuffer.data(), numElements, MPI_INT, source, rank,
+                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
+    // // TODO: Receive messages
+    // for (int i=1; i<ntasks; i++) {
+    //     MPI_Recv(receiveBuffer.data(), numElements, MPI_INT, source, rank, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    // }
 
     printf("Receiver: %d. first element %d\n", rank, receiveBuffer[0]);
-
 
     // Finalize measuring the time and print it out
     double t1 = MPI_Wtime();

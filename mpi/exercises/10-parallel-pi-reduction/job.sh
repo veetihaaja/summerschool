@@ -4,11 +4,10 @@
 #SBATCH --reservation=SummerSchoolCPU
 #SBATCH --partition=small
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=4
+#SBATCH --ntasks-per-node=2
 #SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu=10G
+#SBATCH --mem-per-cpu=1G
 #SBATCH --time=00:05:00
 
 # Run the program
-#srun heat_mpi
-srun heat_mpi ../../../../heat-shared/data/bottle.dat
+srun pi

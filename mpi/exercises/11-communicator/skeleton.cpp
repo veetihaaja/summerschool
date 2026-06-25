@@ -36,10 +36,19 @@ int main(int argc, char *argv[])
     /* Print data that will be sent */
     print_buffers(sendbuf);
 
-    /* TODO: create a new communicator and
-     *       use a single collective communication call
-     *       (and maybe prepare some parameters for the call)
-     */
+    MPI_Comm subComm;
+    int subrank;
+    if (rank == 0 || rank == 1) {
+        color = 1;
+    } else {
+        color = 2;
+    }
+
+    // tasks 0 and 1 to their own communicator with color 1, tasks 2 and 3 to color 2
+    MPI_Comm_split(MPI_COMM_WORLD, color, rank, &subComm);
+    MPI_Comm_rank(subComm, &subrank);
+
+    MPI_Reduce(sendbuf.data(), recvbuf.data(), sendbuf.size(), MPI_INT, MPI_SUM, 0, subComm);
 
     /* Print data that was received */
     print_buffers(recvbuf);

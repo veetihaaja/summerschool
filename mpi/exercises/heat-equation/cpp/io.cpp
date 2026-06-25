@@ -22,39 +22,22 @@ void write_field(const Field& field, const int iter, const ParallelData parallel
     auto width = field.ny;
 
     // array for MPI sends and receives
+    auto full_data = Matrix<double> (height, width);
     auto tmp_mat = Matrix<double> (field.nx, field.ny);
 
-    if (0 == parallel.rank) {
-        // Copy the inner data
-        auto full_data = Matrix<double>(height, width);
-        for (int i = 0; i < field.nx; i++)
-            for (int j = 0; j < field.ny; j++)
-                 full_data(i, j) = field(i + 1, j + 1);
+    for (int i = 0; i < field.nx; i++)
+        for (int j = 0; j < field.ny; j++)
+            tmp_mat(i, j) = field(i + 1, j + 1);
 
-        // Receive data from other ranks
-        for (int p = 1; p < parallel.size; p++) {
-            MPI_Recv(tmp_mat.data(), field.nx * field.ny,
-                     MPI_DOUBLE, p, 22, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            // Copy data to full array
-            for (int i = 0; i < field.nx; i++)
-                for (int j = 0; j < field.ny; j++)
-                     full_data(i + p * field.nx, j) = tmp_mat(i, j);
-        }
+    MPI_Gather(tmp_mat.data(), field.nx * field.ny, MPI_DOUBLE, full_data.data(), field.nx * field.ny, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    if (0 == parallel.rank) {
         // Write out the data to a png file
         std::ostringstream filename_stream;
         filename_stream << "heat_" << std::setw(4) << std::setfill('0') << iter << ".png";
         std::string filename = filename_stream.str();
         save_png(full_data.data(), height, width, filename.c_str(), 'c');
-    } else {
-        // Send data
-        for (int i = 0; i < field.nx; i++)
-            for (int j = 0; j < field.ny; j++)
-                tmp_mat(i, j) = field(i + 1, j + 1);
-
-        MPI_Send(tmp_mat.data(), field.nx * field.ny,
-                 MPI_DOUBLE, 0, 22, MPI_COMM_WORLD);
     }
-
 }
 
 // Read the initial temperature distribution from a file
@@ -85,16 +68,9 @@ void read_field(Field& field, std::string filename,
         for (int i = 0; i < field.nx; i++)
             for (int j = 0; j < field.ny; j++)
                 inner(i, j) = full(i, j);
-
-        // Send data to others
-        for (int p=1; p < parallel.size; p++) {
-            MPI_Send(full.data(p * field.nx, 0), field.nx * field.ny,
-                     MPI_DOUBLE, p, 22, MPI_COMM_WORLD);
-        }
-    } else {
-        MPI_Recv(inner.data(), field.nx * field.ny,
-                 MPI_DOUBLE, 0, 22, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
+
+    MPI_Scatter(full.data(0, 0), field.nx * field.ny, MPI_DOUBLE, inner.data(), field.nx * field.ny, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     file.close();
 

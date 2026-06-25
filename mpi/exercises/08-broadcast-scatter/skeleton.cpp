@@ -16,6 +16,7 @@ int main(int argc, char *argv[])
 {
     int size, rank, buf_size=12;
     std::vector<int> buf(buf_size);
+    std::vector<int> rbuf(buf_size);
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -31,14 +32,42 @@ int main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     double t0 = MPI_Wtime();
 
+    // Bcast
     /* Send everywhere */
     // TODO: Implement the broadcast of the array buf
+
+    // if (rank == 0) {
+    //     for (int i = 1; i < size; i++) {
+    //         MPI_Send(buf.data(), buf_size, MPI_INT, i, 0, MPI_COMM_WORLD);
+    //     }
+    // } else {
+    //     MPI_Recv(buf.data(), buf_size, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    // }
+
+    //MPI_Bcast(buf.data(), buf_size, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // Scatter
+    if (buf_size % size != 0) {
+        printf("Buffer size not divisible by amount of processes\n");
+        return 1;
+    }
+    int nPerProc = buf_size / size;
+
+    // if (rank == 0) {
+    //     for (int i = 1; i<size; i++) {
+    //         MPI_Send(&(buf.at(i*nPerProc)), nPerProc, MPI_INT, i, 0, MPI_COMM_WORLD);
+    //     }
+    // } else {
+    //     MPI_Recv(buf.data(), nPerProc, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    // }
+
+    MPI_Scatter(buf.data(), nPerProc, MPI_INT, rbuf.data(), nPerProc, MPI_INT, 0, MPI_COMM_WORLD);
 
     /* End timing */
     double t1 = MPI_Wtime();
 
     /* Print data that was received */
-    print_buffer(buf);
+    print_buffer(rbuf);
     if (rank == 0) {
         printf("Time elapsed: %6.8f s\n", t1 - t0);
     }

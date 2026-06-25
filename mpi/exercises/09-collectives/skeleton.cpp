@@ -38,6 +38,21 @@ int main(int argc, char *argv[])
      *       (and maybe prepare some parameters for the call)
      */
 
+    // 1st
+    // MPI_Bcast(sendbuf.data(), sendbuf.size(), MPI_INT, 0, MPI_COMM_WORLD);
+    // std::swap(recvbuf, sendbuf);
+
+    // 2nd
+    // MPI_Scatter(sendbuf.data(), 2, MPI_INT, recvbuf.data(), 2, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // 3rd
+    // const int recvCounts[NTASKS] = {1, 1, 2, 4};
+    // const int displas[NTASKS] = {0, 1, 2, 4};
+    // MPI_Gatherv(sendbuf.data(), recvCounts[rank], MPI_INT, recvbuf.data(), recvCounts, displas, MPI_INT, 1, MPI_COMM_WORLD);
+
+    // 4th
+    MPI_Alltoall(sendbuf.data(), 2, MPI_INT, recvbuf.data(), 2, MPI_INT, MPI_COMM_WORLD);
+
     /* Print data that was received */
     /* TODO: use correct buffer */
     print_buffers(recvbuf);

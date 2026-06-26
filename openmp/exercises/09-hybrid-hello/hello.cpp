@@ -4,10 +4,14 @@
 
 #include <cstdio>
 #include <omp.h>
+#include <mpi.h>
 
 int main(int argc, char *argv[])
 {
     int rank = 0;
+    int provided, required = MPI_THREAD_FUNNELED;
+    MPI_Init_thread(&argc, &argv, required, &provided);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     #pragma omp parallel
     {
@@ -15,5 +19,6 @@ int main(int argc, char *argv[])
         printf("Hello from thread %d in process %d!\n", tid, rank);
     }
 
+    MPI_Finalize();
     return 0;
 }

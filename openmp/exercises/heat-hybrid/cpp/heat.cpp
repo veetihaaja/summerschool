@@ -27,37 +27,48 @@ void Field::generate(ParallelData parallel) {
 
     // Radius of the source disc
     auto radius = nx_full / 6.0;
-    for (int i = 0; i < nx + 2; i++) {
-        for (int j = 0; j < ny + 2; j++) {
-            // Distance of point i, j from the origin
-            auto dx = i + parallel.rank * nx - nx_full / 2 + 1;
-            auto dy = j - ny / 2 + 1;
-            if (dx * dx + dy * dy < radius * radius) {
-                temperature(i, j) = 5.0;
-            } else {
-                temperature(i, j) = 65.0;
+
+    #pragma omp parallel
+    {
+        #pragma omp for
+        for (int i = 0; i < nx + 2; i++) {
+            for (int j = 0; j < ny + 2; j++) {
+                // Distance of point i, j from the origin
+                auto dx = i + parallel.rank * nx - nx_full / 2 + 1;
+                auto dy = j - ny / 2 + 1;
+                if (dx * dx + dy * dy < radius * radius) {
+                    temperature(i, j) = 5.0;
+                } else {
+                    temperature(i, j) = 65.0;
+                }
             }
         }
+
+        // Boundary conditions
+        #pragma omp for
+        for (int i = 0; i < nx + 2; i++) {
+            // Left
+            temperature(i, 0) = 20.0;
+            // Right
+            temperature(i, ny + 1) = 70.0;
+        }
+
+        // Top
+        if (0 == parallel.rank) {
+            #pragma omp for
+            for (int j = 0; j < ny + 2; j++) {
+                temperature(0, j) = 85.0;
+            }
+        }
+
+        // Bottom
+        if (parallel.rank == parallel.size - 1) {
+            #pragma omp for
+            for (int j = 0; j < ny + 2; j++) {
+                temperature(nx + 1, j) = 5.0;
+            }
+        }
+
     }
 
-    // Boundary conditions
-    for (int i = 0; i < nx + 2; i++) {
-        // Left
-        temperature(i, 0) = 20.0;
-        // Right
-        temperature(i, ny + 1) = 70.0;
-    }
-
-    // Top
-    if (0 == parallel.rank) {
-        for (int j = 0; j < ny + 2; j++) {
-            temperature(0, j) = 85.0;
-        }
-    }
-    // Bottom
-    if (parallel.rank == parallel.size - 1) {
-        for (int j = 0; j < ny + 2; j++) {
-            temperature(nx + 1, j) = 5.0;
-        }
-    }
 }

@@ -7,6 +7,8 @@
 #include <vector>
 #include <omp.h>
 #include "helper_functions.hpp"
+#include <span>
+#include <memory>
 
 
 int main(int argc, char* argv[]) {
@@ -18,10 +20,16 @@ int main(int argc, char* argv[]) {
     printf("Array size n = %d\n", n);
 
     double alpha;
-    std::vector<double> x(n), y(n);
+    std::vector<double> y(n);
+
+    double *_x = (double*)malloc(n * sizeof(double));
+    std::unique_ptr<double> _x_smart(_x);
+    std::span<double> x(_x_smart.get(), n);  // this x behaves like std::vector for the purposes of this exercise
 
     // Initialization
     alpha = 3.0;
+
+    #pragma omp parallel for
     for (int i = 0; i < n; i++) {
         double frac = 1.0 / ((double) (n - 1));
         x[i] = i * frac;

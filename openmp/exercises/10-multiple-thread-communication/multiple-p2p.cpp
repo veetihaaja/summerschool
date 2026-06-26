@@ -5,29 +5,50 @@
 #include <cstdio>
 #include <cstdlib>
 #include <mpi.h>
+#include <vector>
+#include <omp.h>
 
 
 int main(int argc, char *argv[])
 {
     int rank, ntasks;
 
-    MPI_Init(&argc, &argv);
+    int provided, required=MPI_THREAD_MULTIPLE;
+    MPI_Init_thread(&argc, &argv, required, &provided);
+
+    if (provided < required) {
+        printf("Womp womp\n");
+        return 1;
+    }
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &ntasks);
 
-    int tid = 0;
-    int msg = -1;
-    int tag = 123;
+    std::vector<MPI_Comm> mpi_comm_thread(omp_get_max_threads());
+    for (auto& comm : mpi_comm_thread) {
+        MPI_Comm_dup(MPI_COMM_WORLD, &comm);
+    }
 
+    int tid, msg, tag=123;
+
+    #pragma omp parallel
+    {
     if (rank == 0) {
-        msg = tid;
-        for (int i = 1; i < ntasks; i++) {
-            MPI_Send(&msg, 1, MPI_INT, i, tag, MPI_COMM_WORLD);
+            tid = omp_get_thread_num();
+            msg = tid;
+            for (int i = 1; i < ntasks; i++) {
+                MPI_Send(&msg, 1, MPI_INT, i, tag, mpi_comm_thread.at(omp_get_thread_num()));
+            }
+        } else {
+            tid = omp_get_thread_num();
+            MPI_Recv(&msg, 1, MPI_INT, 0, tag, mpi_comm_thread.at(omp_get_thread_num()), MPI_STATUS_IGNORE);
+            printf("Rank %d thread %d received %d\n", rank, tid, msg);
         }
-    } else {
-        MPI_Recv(&msg, 1, MPI_INT, 0, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        printf("Rank %d thread %d received %d\n", rank, tid, msg);
+    }
+
+    // Free communicators  
+    for (auto& comm : mpi_comm_thread) {
+        MPI_Comm_free(&comm);
     }
 
     MPI_Finalize();

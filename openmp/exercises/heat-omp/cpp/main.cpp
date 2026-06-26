@@ -8,6 +8,7 @@
 #include <iostream>
 #include <iomanip>
 #include <chrono>
+#include <omp.h>
 
 #include "heat.hpp"
 
@@ -30,6 +31,7 @@ int main(int argc, char **argv)
     std::cout << std::fixed << std::setprecision(6);
     std::cout << "Average temperature at start: " << average_temp << std::endl;
 
+    std::cout << "Number of OpenMP-threads: " << omp_get_max_threads() << std::endl;
 
     const double a = 0.5;     // Diffusion constant
     auto dx2 = current.dx * current.dx;

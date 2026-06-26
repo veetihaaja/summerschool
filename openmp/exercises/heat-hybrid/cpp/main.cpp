@@ -8,13 +8,22 @@
 #include <iostream>
 #include <iomanip>
 #include <mpi.h>
+#include <omp.h>
 
 #include "heat.hpp"
 
 int main(int argc, char **argv)
 {
 
-    MPI_Init(&argc, &argv);
+    int provided, required = MPI_THREAD_FUNNELED;
+
+    MPI_Init_thread(&argc, &argv, required, &provided);
+
+    if (provided < required) {
+        printf("MPI does not support the required thread support level\n");
+        MPI_Abort(MPI_COMM_WORLD, -1);
+        return 0;
+    }
 
     const int image_interval = 100;    // Image output interval
 
@@ -33,6 +42,7 @@ int main(int argc, char **argv)
                   << "rows: " << current.nx_full << " columns: " << current.ny_full
                   << " time steps: " << nsteps << std::endl;
         std::cout << "Number of MPI tasks: " << parallelization.size << std::endl;
+        std::cout << "Number of OpenMP Threads: " << omp_get_max_threads() << std::endl;
         std::cout << std::fixed << std::setprecision(6);
         std::cout << "Average temperature at start: " << average_temp << std::endl;
     }

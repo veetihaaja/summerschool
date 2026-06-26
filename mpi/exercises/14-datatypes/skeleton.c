@@ -47,11 +47,37 @@ int main(int argc, char **argv)
     // Create datatype
     // TODO
 
-    // Send data from rank 0 to rank 1
-    // TODO
+    // MPI_Datatype column;
+    // MPI_Type_vector(8, 1, 8, MPI_INT, &column);
+    // MPI_Type_commit(&column);
 
-    // Free datatype
-    // TODO
+    // // Send data from rank 0 to rank 1
+    // // TODO
+
+    // if (rank == 0) {
+    //     MPI_Send(&(array[0][1]), 1, column, 1, 0, MPI_COMM_WORLD);
+    // } else {
+    //     MPI_Recv(&(array[0][1]), 1, column, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    // }
+
+    // // Free datatype
+    // MPI_Type_free(&column);
+
+    MPI_Datatype colV;
+    const int displ[4] = {0, 2*8+1, 4*8+2, 6*8+3};
+    const int bSizes[4] = {1, 2, 3, 4};
+    MPI_Type_indexed(4, bSizes, displ, MPI_INT, &colV);
+    MPI_Type_commit(&colV);
+
+    if (rank == 0) {
+        MPI_Send(&(array[0][0]), 1, colV, 1, 0, MPI_COMM_WORLD);
+    } else {
+        MPI_Recv(&(array[0][0]), 1, colV, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+
+    // // Free datatype
+    MPI_Type_free(&colV);
+
 
     // Print received data
     if (rank == 1) {

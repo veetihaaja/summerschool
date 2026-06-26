@@ -34,31 +34,44 @@ int main(int argc, char* argv[])
     // Start timing
     double t0 = omp_get_wtime();
 
-    // Create a random number generator
-    std::seed_seq seq{seed};
-    std::mt19937_64 rng(seq);
-    std::uniform_real_distribution<double> dis(0.0, 1.0);
+    // // Create a random number generator
+    // std::seed_seq seq{seed};
+    // std::mt19937_64 rng(seq);
+    // std::uniform_real_distribution<double> dis(0.0, 1.0);
 
-    // Print a few random values for debugging
-    printf("Thread %3d: A few random values: %.4f %.4f %.4f\n",
-           0, dis(rng), dis(rng), dis(rng));
-
-    // Draw N random lines and calculate total distance
     double total_distance = 0.0;
-    for (int i = 0; i < N; ++i) {
-        // Get two random points
-        double x1 = dis(rng);
-        double y1 = dis(rng);
-        double x2 = dis(rng);
-        double y2 = dis(rng);
 
-        // Calculate distance between the points
-        double dx = x1 - x2;
-        double dy = y1 - y2;
-        double distance = sqrt(dx * dx + dy * dy);
+    #pragma omp parallel firstprivate(seed)
+    {
 
-        // Sum up distances
-        total_distance += distance;
+        // Create a random number generator
+        int threadSeed = (seed + 1) * omp_get_thread_num();
+        std::seed_seq seq{threadSeed};
+        std::mt19937_64 rng(seq);
+        std::uniform_real_distribution<double> dis(0.0, 1.0);
+        
+        // Print a few random values for debugging
+        printf("Thread %3d with seed %i: A few random values: %.4f %.4f %.4f\n",
+            omp_get_thread_num(), threadSeed, dis(rng), dis(rng), dis(rng));
+
+        // Draw N random lines and calculate total distance
+        #pragma omp for reduction(+:total_distance)
+        for (int i = 0; i < N; ++i) {
+            // Get two random points
+            double x1 = dis(rng);
+            double y1 = dis(rng);
+            double x2 = dis(rng);
+            double y2 = dis(rng);
+
+            // Calculate distance between the points
+            double dx = x1 - x2;
+            double dy = y1 - y2;
+            double distance = sqrt(dx * dx + dy * dy);
+
+            // Sum up distances
+            total_distance += distance;
+        }
+
     }
 
     // Calculate average distance

@@ -12,4 +12,4 @@
 # Set the number of threads based on cpus-per-task
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
 # Run the program
-srun ./hello.x
+srun ./sum.x

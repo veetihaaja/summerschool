@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstdio>
 #include <string>
+#include <fstream>
 
 #include <mpi.h>
 
@@ -28,11 +29,36 @@ void single_writer(const std::vector<int>& localData, const char* filename) {
     // You can assume that 'localData' has same length in all MPI processes:
     const size_t numElementsPerRank = localData.size();
 
+    int rank, ntasks;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &ntasks);
+
+    std::vector<int> fullData(numElementsPerRank * ntasks);
+    
+    MPI_Gather(localData.data(), numElementsPerRank, MPI_INT, fullData.data(), numElementsPerRank, MPI_INT, 0, MPI_COMM_WORLD);
+
+    if (rank == 0) {
+        std::ofstream outfile{filename, std::ios::binary};
+        outfile.write(reinterpret_cast<const char *>(fullData.data()), fullData.size() * sizeof(int));
+        outfile.close();
+    }
 }
 
 void collective_write(const std::vector<int>& localData, const char* filename) {
     // TODO: Like single_writer(), but implement a parallel write using MPI_File_write_at_all()
 
+    int rank, ntasks;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &ntasks);
+
+    MPI_File file;
+    MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &file);
+
+    MPI_Offset offset = (MPI_Offset) (rank * localData.size() * sizeof(int));
+
+    MPI_File_write_at_all(file, offset, localData.data(), localData.size(), MPI_INT, MPI_STATUS_IGNORE);
+
+    MPI_File_close(&file);
 }
 
 int main(int argc, char **argv) {

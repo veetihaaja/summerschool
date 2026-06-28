@@ -17,7 +17,7 @@ __global__ void strideKernel(int* out) {
     int col = threadIdx.x;
 
     if (row < HEIGHT && col < WIDTH) {
-        int idx = row * HEIGHT + col;
+        int idx = row * WIDTH + col;
         out[idx] = row * 100 + col;
         printf("Tid is(%d,%d) row %d col %d -> idx %2d value %3d\n",threadIdx.y,threadIdx.x,row, col, idx, out[idx]);
     }

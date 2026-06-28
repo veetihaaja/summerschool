@@ -10,19 +10,35 @@
 #include "../error_checking.hpp"
 
 // Copy all elements using threads in a 2D grid
-__global__ void copy2d(/*TODO: add arguments*/) {
+__global__ void copy2d(double *dst, double *src, size_t num_rows, size_t num_cols) {
     // TODO: compute row and col using
     // - threadIdx.x, threadIdx.y
     // - blockIdx.x, blockIdx.y
     // - blockDim.x, blockDim.y
 
-    // TODO: Make sure there's no out-of-bounds access
-    // row must be < number of rows
-    // col must be < number of columns
+    const int col = threadIdx.x + blockIdx.x * blockDim.x;
+    const int row = threadIdx.y + blockIdx.y * blockDim.y;
 
-    // We're computing 1D index from a 2D index and copying from src to dst
-    const size_t index = row * num_cols + col;
-    dst[index] = src[index];
+    const int colStride = blockDim.x * gridDim.x;
+    const int rowStride = blockDim.y * gridDim.y;
+
+    // // TODO: Make sure there's no out-of-bounds access
+    // // row must be < number of rows
+    // // col must be < number of columns
+
+    // // We're computing 1D index from a 2D index and copying from src to dst
+    // if (row < num_rows && col < num_cols) {
+    //     const size_t index = row * num_cols + col;
+    //     dst[index] = src[index];
+    // }
+
+    for (size_t i = col; i < num_cols; i += colStride) {
+        for (size_t j = row; j < num_rows; j += rowStride) {
+            const size_t index = j * num_cols + i;
+            dst[index] = src[index];
+        }
+    }
+
 }
 
 int main() {
@@ -40,17 +56,28 @@ int main() {
 
     // TODO: Allocate + copy initial values to GPU
 
+    double *d_ptr_src, *d_ptr_dst;
+    hipMalloc(&d_ptr_src, num_bytes);
+    hipMalloc(&d_ptr_dst, num_bytes);    
+    hipMemcpy(d_ptr_src, x.data(), num_bytes, hipMemcpyHostToDevice);
+
     // TODO: Define grid dimensions
     // Use dim3 structure for threads and blocks
-    dim3 threads;
-    dim3 blocks;
+    dim3 threads = {32, 32};
+    
+    // dim3 blocks = {20, 15};
+    dim3 blocks = {2, 2};
 
     // TODO: launch the device kernel
-    LAUNCH_KERNEL(copy2d, blocks, threads, 0, 0, the_arguments_for_the_kernel);
+    LAUNCH_KERNEL(copy2d, blocks, threads, 0, 0, d_ptr_dst, d_ptr_src, num_rows, num_cols);
 
     // TODO: Copy results back to the CPU vector y
 
+    hipMemcpy(y.data(), d_ptr_dst, num_bytes, hipMemcpyHostToDevice);
+
     // TODO: Free device memory
+    hipFree(d_ptr_src);
+    hipFree(d_ptr_dst);
 
     // Check result of computation on the GPU
     double error = 0.0;

@@ -42,6 +42,21 @@ __global__ void reduce_naive_blockatomic(const double* __restrict__ in,
                                          double* __restrict__ out,
                                          size_t N)
 {
+
+    size_t tid = blockIdx.x * blockDim.x + threadIdx.x;
+    size_t stride = blockDim.x * gridDim.x;
+
+    __shared__ double sum;
+    sum = 0.0;
+    __syncthreads();
+
+    for (size_t i = tid; i < N; i += stride)
+        sum += in[i];
+
+    if (threadIdx.x == 0) {
+        atomicAdd(out, sum);
+    }
+
 }
 
 // ==========================================================

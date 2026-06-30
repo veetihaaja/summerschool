@@ -49,6 +49,35 @@ __global__ void histogram_one_block_per_bin(const int* __restrict__ bins,
     // WRITE THE KERNEL HERE. 
     // HINT:
     // every thread "owns" a cell in shared memory. we "split" the array across the threads of every block, and when the value is the one that should be in the bin (remember every block "owns" one bin) then they increment the thread local counter. When all the values in the array are evaluated, we perform a reduction from the shared memory values and only the thread 0 writes in global memory
+    const int stride = blockDim.x;
+
+    __shared__ int blockbuffer[256];
+
+    for (int i = 0; i<256; i++) {
+        blockbuffer[i] = 0;
+    }
+
+    __syncthreads();
+    const int binOfBlock = blockIdx.x;
+
+    for (int i = threadIdx.x; i<n; i+=stride) {
+        int bin = bins[i];
+        if (bin == binOfBlock) {
+            if (0 <= bin && bin < num_bins) {
+                blockbuffer[threadIdx.x]++;
+            }
+        }
+    }
+
+    __syncthreads();
+    if (threadIdx.x == 0) {
+        int reduction = 0;
+        // reduce and write
+        for (int i = 0; i<256; i++) {
+            reduction += blockbuffer[i];
+        }
+        hist[binOfBlock] = reduction;
+    }
 
 }
 
@@ -62,6 +91,14 @@ __global__ void histogram_intbins_global(const int* __restrict__ bins,
     // HINT: 
     // the algorithm is simpler: every thread gets a value, identifies the bin, performs an atomicadd into the global memory
 
+    const int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    const int stride = blockDim.x * gridDim.x;
+
+    for (int i = tid; i < n; i+=stride) {
+        if (0 <= bins[i] && bins[i] < num_bins) {
+            atomicAdd(&(global_hist[bins[i]]), 1);
+        }
+    }
 }
 
 
@@ -75,6 +112,26 @@ __global__ void histogram_intbins_shared(const int* __restrict__ bins,
     // HINT:
     // similar to previous one, but instead of making an atomicadd to global memory for every value we have a shared memory slice that represents all the bins. we do our atomic adds there, and only when all values are processed, we do global atomic add from every bin from all blocks into the result array
 
+    const int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    const int stride = blockDim.x * gridDim.x;
+
+    extern __shared__ int tempBins[];
+
+    for (int i = 0; i<num_bins; i++) {
+        tempBins[i] = 0;
+    }
+
+    __syncthreads();
+    for (int i = tid; i < n; i+=stride) {
+        if (0 <= bins[i] && bins[i] < num_bins) {
+            atomicAdd(&(tempBins[bins[i]]), 1);
+        }
+    }
+
+    __syncthreads();
+    for (int i = threadIdx.x; i < num_bins; i += blockDim.x) {
+        atomicAdd(&(global_hist[i]), tempBins[i]);
+    }
 }
 
 

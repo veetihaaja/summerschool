@@ -85,7 +85,12 @@ int main() {
   b = (float*) malloc(N_bytes);
   c = (float*) malloc(N_bytes);
 
-  #error create three separate streams
+  //#error create three separate streams
+  hipStream_t strms[3];
+
+  for (int i = 0; i < 3; i++) {
+    hipStreamCreate(&(strms[i]));
+  }
 
   // Device allocations
   HIP_ERRCHK(hipMalloc((void**)&d_a, N_bytes));
@@ -98,22 +103,25 @@ int main() {
   HIP_ERRCHK(hipDeviceSynchronize());
 
   // Execute kernels in sequence
-  #error Launch each kernel in a different stream
-  kernel_a<<<gridsize, blocksize,0,0>>>(d_a, N);
+  //#error Launch each kernel in a different stream
+  kernel_a<<<gridsize, blocksize,0,strms[0]>>>(d_a, N);
   HIP_ERRCHK(hipGetLastError());
 
-  kernel_b<<<gridsize, blocksize,0,0>>>(d_b, N);
+  kernel_b<<<gridsize, blocksize,0,strms[1]>>>(d_b, N);
   HIP_ERRCHK(hipGetLastError());
 
-  kernel_c<<<gridsize, blocksize,0,0>>>(d_c, N);
+  kernel_c<<<gridsize, blocksize,0,strms[2]>>>(d_c, N);
   HIP_ERRCHK(hipGetLastError());
 
   // Copy results back (in the default stream with hipMemCpy)
-  #error synchronize the host with stream A, before copying d_A back
+  //#error synchronize the host with stream A, before copying d_A back
+  hipStreamSynchronize(strms[0]);
   HIP_ERRCHK(hipMemcpy(a, d_a, N_bytes, hipMemcpyDefault));
-  #error synchronize the host with stream B, before copying d_B back
+  //#error synchronize the host with stream B, before copying d_B back
+  hipStreamSynchronize(strms[1]);
   HIP_ERRCHK(hipMemcpy(b, d_b, N_bytes, hipMemcpyDefault));
-  #error synchronize the host with stream C, before copying d_C back
+  //#error synchronize the host with stream C, before copying d_C back
+  hipStreamSynchronize(strms[2]);  
   HIP_ERRCHK(hipMemcpy(c, d_c, N_bytes, hipMemcpyDefault));
 
   for (int i = 0; i < 10; ++i) printf("%f ", a[i]);
@@ -129,7 +137,10 @@ int main() {
   HIP_ERRCHK(hipFree(d_b));
   HIP_ERRCHK(hipFree(d_c));
 
-  #error destroy all streams
+  //#error destroy all streams
+  for (int i = 0; i<3; i++) {
+    hipStreamDestroy(strms[i]);
+  }
 
   free(a);
   free(b);

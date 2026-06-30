@@ -1,0 +1,3 @@
+"Name","Calls","TotalDurationNs","AverageNs","Percentage"
+"kernel(float*, int, int)",13,6687061,514389,90.82907704672229
+"<barrier packet>",1,675186,675186,9.170922953277715

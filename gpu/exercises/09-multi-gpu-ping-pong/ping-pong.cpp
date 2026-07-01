@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <hip/hip_runtime.h>
 
+// #include "../error_checking.hpp"
+
 
 /* HIP kernel to increment every element of a vector by one */
 __global__ void add_kernel(double *in, int N)
@@ -76,10 +78,24 @@ void GPUtoGPUviaHost(int rank, double *hA, double *dA, int N, double &timer)
     if (rank == 0) {
         // TODO: Copy vector to host and send it to rank 1
         // TODO: Receive vector from rank 1 and copy it to the device
+        hipMemcpy(hA, dA, N * sizeof(double), hipMemcpyDeviceToHost);
+        MPI_Send(hA, N, MPI_DOUBLE, 1, 11, MPI_COMM_WORLD);
+
+        MPI_Recv(hA, N, MPI_DOUBLE, 1, 12, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        hipMemcpy(dA, hA, N * sizeof(double), hipMemcpyHostToDevice);
     } else if (rank == 1) {
         // TODO: Receive vector from rank 0 and copy it to the device
         // TODO: Launch kernel to increment values on the GPU
         // TODO: Copy vector to host and send it to rank 0
+        MPI_Recv(hA, N, MPI_DOUBLE, 0, 11, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        hipMemcpy(dA, hA, N * sizeof(double), hipMemcpyHostToDevice);
+
+        //LAUNCH_KERNEL(add_kernel, 4, 32, 0, 0, dA, N);
+        add_kernel<<<2, 64, 0, 0>>> (dA, N);
+        hipStreamSynchronize(0);
+
+        hipMemcpy(hA, dA, N * sizeof(double), hipMemcpyDeviceToHost);
+        MPI_Send(hA, N, MPI_DOUBLE, 0, 12, MPI_COMM_WORLD);
     }
 
     stop = MPI_Wtime();
@@ -98,10 +114,22 @@ void GPUtoGPUdirect(int rank, double *dA, int N, double &timer)
     if (rank == 0) {
         // TODO: Send vector to rank 1
         // TODO: Receive vector from rank 1
+        MPI_Send(dA, N, MPI_DOUBLE, 1, 11, MPI_COMM_WORLD);
+
+        MPI_Recv(dA, N, MPI_DOUBLE, 1, 12, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
     } else if (rank == 1) {
         // TODO: Receive vector from rank 0
         // TODO: Launch kernel to increment values on the GPU
         // TODO: Send vector to rank 0
+
+        MPI_Recv(dA, N, MPI_DOUBLE, 0, 11, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        //LAUNCH_KERNEL(add_kernel, 4, 32, 0, 0, dA, N);
+        add_kernel<<<2, 64, 0, 0>>> (dA, N);
+        hipStreamSynchronize(0);
+
+        MPI_Send(dA, N, MPI_DOUBLE, 0, 12, MPI_COMM_WORLD);
     }
 
     stop = MPI_Wtime();

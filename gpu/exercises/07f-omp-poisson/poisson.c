@@ -45,52 +45,59 @@ void run(const int n, const int niter, const double normmax)
     // Iterate
     double t0 = omp_get_wtime();
 
-    for (int it = 1; it < niter + 1; it++) {
+    //#pragma omp target
+    {
+        for (int it = 1; it < niter + 1; it++) {
 
-        // Stencil update
-        for (int i = 1; i < ny - 1; i++) {
-            for (int j = 1; j < nx - 1; j++) {
-                int ind = i * nx + j;
-                int ip = (i + 1) * nx + j;
-                int im = (i - 1) * nx + j;
-                int jp = i * nx + j + 1;
-                int jm = i * nx + j - 1;
-                unew[ind] = 0.25 * (u[ip] + u[im] + u[jp] + u[jm] - h2 * f[ind]);
-            }
-        }
-
-        // Swap the arrays
-        double *tmp = u;
-        u = unew;
-        unew = tmp;
-
-        // Check converge
-        if (it % 100 == 0) {
-            double norm2 = 0.0;
+            // Stencil update
+    //        #pragma omp teams distribute
             for (int i = 1; i < ny - 1; i++) {
+    //            #pragma omp parallel for
                 for (int j = 1; j < nx - 1; j++) {
                     int ind = i * nx + j;
-                    double diff = u[ind] - unew[ind];
-                    norm2 += diff * diff;
+                    int ip = (i + 1) * nx + j;
+                    int im = (i - 1) * nx + j;
+                    int jp = i * nx + j + 1;
+                    int jm = i * nx + j - 1;
+                    unew[ind] = 0.25 * (u[ip] + u[im] + u[jp] + u[jm] - h2 * f[ind]);
                 }
             }
 
-            printf("%06d: %f\n", it, norm2);
+            // Swap the arrays
+            double *tmp = u;
+            u = unew;
+            unew = tmp;
 
-            if (norm2 < norm2max) {
-                printf("Converged\n");
-                break;
+            // Check converge
+            if (it % 100 == 0) {
+                double norm2 = 0.0;
+    //            #pragma omp teams distribute
+                for (int i = 1; i < ny - 1; i++) {
+    //                #pragma omp parallel for
+                    for (int j = 1; j < nx - 1; j++) {
+                        int ind = i * nx + j;
+                        double diff = u[ind] - unew[ind];
+                        norm2 += diff * diff;
+                    }
+                }
+
+                printf("%06d: %f\n", it, norm2);
+
+                if (norm2 < norm2max) {
+                    printf("Converged\n");
+                    break;
+                }
             }
-        }
 
-        // Write data
-        if (it % 1000 == 0) {
-            sprintf(filename, "u%06d.bin", it);
-            write_array(filename, u, n2);
-        }
+            // Write data
+            if (it % 1000 == 0) {
+    //            #pragma update from(u)
+                sprintf(filename, "u%06d.bin", it);
+                write_array(filename, u, n2);
+            }
 
+        }
     }
-
     double t1 = omp_get_wtime();
 
     // Write final result

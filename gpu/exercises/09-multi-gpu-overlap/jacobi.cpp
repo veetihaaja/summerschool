@@ -252,28 +252,51 @@ int main(int argc, char** argv)
 
     t1 = MPI_Wtime();
 
+    MPI_Request firstSend1, firstReceive1, firstSend2, firstReceive2, secondSend1, secondReceive1, secondSend2, secondReceive2;
+
     while (diff > tolerance && iterations < MAX_ITERATIONS) {
 
         roctxRangePush("halo_exchange");
-        MPI_Sendrecv(&phi_d[Ncols], Ncols, MPI_DOUBLE, nghbrs[0], 0,
-                     &phi_d[(Nrows-1) * Ncols], Ncols, MPI_DOUBLE, nghbrs[1], 0,
-                     MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Sendrecv(&phi_d[(Nrows-2) * Ncols], Ncols, MPI_DOUBLE, nghbrs[1], 0,
-                     &phi_d[0], Ncols, MPI_DOUBLE, nghbrs[0], 0,
-                     MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        //MPI_Isendrecv(&phi_d[Ncols], Ncols, MPI_DOUBLE, nghbrs[0], 0,
+        //             &phi_d[(Nrows-1) * Ncols], Ncols, MPI_DOUBLE, nghbrs[1], 0,
+        //             MPI_COMM_WORLD, &firstSend1);
+        //MPI_Isendrecv(&phi_d[(Nrows-2) * Ncols], Ncols, MPI_DOUBLE, nghbrs[1], 0,
+        //             &phi_d[0], Ncols, MPI_DOUBLE, nghbrs[0], 0,
+        //             MPI_COMM_WORLD, &firstSend2);
+
+        MPI_Irecv(&phi_d[(Nrows-1) * Ncols], Ncols, MPI_DOUBLE, nghbrs[1], 0, MPI_COMM_WORLD, &firstReceive1);
+        MPI_Isend(&phi_d[Ncols], Ncols, MPI_DOUBLE, nghbrs[0], 0, MPI_COMM_WORLD, &firstSend1);
+
+        MPI_Irecv(&phi_d[0], Ncols, MPI_DOUBLE, nghbrs[0], 0, MPI_COMM_WORLD, &firstReceive2);
+        MPI_Isend(&phi_d[(Nrows-2) * Ncols], Ncols, MPI_DOUBLE, nghbrs[1], 0, MPI_COMM_WORLD, &firstSend2);
+
         roctxRangePop();
-        sweepGPU<<<dimGrid, dimBlock>>>(phiPrev_d, phi_d, source_d, h*h, Nrows, Ncols); 
+        sweepGPU<<<dimGrid, dimBlock>>>(phiPrev_d, phi_d, source_d, h*h, Nrows, Ncols);
+        MPI_Request reqs1[2] = {firstReceive1, firstReceive2};
+        MPI_Waitall(2, reqs1, MPI_STATUS_IGNORE);
+        sweepGPU_boundary<<<dimGrid, dimBlock>>>(phiPrev_d, phi_d, source_d, h*h, Nrows, Ncols);
         HIP_CHECK( hipDeviceSynchronize() );
 
         roctxRangePush("halo_exchange");
-        MPI_Sendrecv(&phiPrev_d[Ncols], Ncols, MPI_DOUBLE, nghbrs[0], 0,
-                     &phiPrev_d[(Nrows-1) * Ncols], Ncols, MPI_DOUBLE, nghbrs[1], 0,
-                     MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Sendrecv(&phiPrev_d[(Nrows-2) * Ncols], Ncols, MPI_DOUBLE, nghbrs[1], 0,
-                     &phiPrev_d[0], Ncols, MPI_DOUBLE, nghbrs[0], 0,
-                     MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        //MPI_ISendrecv(&phiPrev_d[Ncols], Ncols, MPI_DOUBLE, nghbrs[0], 0,
+        //             &phiPrev_d[(Nrows-1) * Ncols], Ncols, MPI_DOUBLE, nghbrs[1], 0,
+        //             MPI_COMM_WORLD, &secondSend1);
+        //MPI_ISendrecv(&phiPrev_d[(Nrows-2) * Ncols], Ncols, MPI_DOUBLE, nghbrs[1], 0,
+        //             &phiPrev_d[0], Ncols, MPI_DOUBLE, nghbrs[0], 0,
+        //             MPI_COMM_WORLD, &secondSend2);
+
+
+        MPI_Irecv(&phiPrev_d[(Nrows-1) * Ncols], Ncols, MPI_DOUBLE, nghbrs[1], 0, MPI_COMM_WORLD, &secondReceive1);
+        MPI_Isend(&phiPrev_d[Ncols], Ncols, MPI_DOUBLE, nghbrs[0], 0, MPI_COMM_WORLD, &secondSend1);
+
+        MPI_Irecv(&phiPrev_d[0], Ncols, MPI_DOUBLE, nghbrs[0], 0, MPI_COMM_WORLD, &secondReceive2);
+        MPI_Isend(&phiPrev_d[(Nrows-2) * Ncols], Ncols, MPI_DOUBLE, nghbrs[1], 0, MPI_COMM_WORLD, &secondSend2);        
+
         roctxRangePop();
-        sweepGPU<<<dimGrid, dimBlock>>>(phi_d, phiPrev_d, source_d, h*h, Nrows, Ncols); 
+        sweepGPU<<<dimGrid, dimBlock>>>(phi_d, phiPrev_d, source_d, h*h, Nrows, Ncols);
+        MPI_Request reqs2[2] = {secondReceive1, secondReceive2};
+        MPI_Waitall(2, reqs2, MPI_STATUS_IGNORE);
+        sweepGPU_boundary<<<dimGrid, dimBlock>>>(phi_d, phiPrev_d, source_d, h*h, Nrows, Ncols);
         HIP_CHECK( hipDeviceSynchronize() );
         CHECK_ERROR_MSG("Jacobi kernels");
         iterations += 2;

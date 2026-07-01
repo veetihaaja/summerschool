@@ -13,4 +13,4 @@
 export CRAY_ACC_DEBUG=2
 
 # Run the program
-srun ./hello
+srun ./sum

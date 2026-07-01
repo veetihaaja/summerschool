@@ -33,15 +33,24 @@ int main(int argc, char* argv[]) {
     print_array("x", x);
     print_array("y", y);
 
+    double *x_ptr = x.data();
+    double *y_ptr = y.data();
+
     // Calculate axpy
     // TODO: Add OpenMP directives for GPU execution
-    for (int i = 0; i < n; i++) {
-        y[i] += alpha * x[i];
+    #pragma omp target map(to: x_ptr[0:n]) map(tofrom: y_ptr[0:n])
+    #pragma omp teams distribute parallel for
+    {
+        for (int i = 0; i < n; i++) {
+            y_ptr[i] += alpha * x_ptr[i];
+        }
     }
+
+    std::vector<double> y_final(y_ptr, y_ptr + n); 
 
     // Print output values
     printf("Output:\n");
-    print_array("y", y);
+    print_array("y", y_final);
 
     return 0;
 }
